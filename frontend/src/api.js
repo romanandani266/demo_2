@@ -2,7 +2,7 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080";
 
-export const fetchBlogs = async () => {
+export const getBlogs = async () => {
   try {
     const response = await axios.get(`${API_BASE_URL}/blogs`);
     return response.data;
@@ -12,7 +12,7 @@ export const fetchBlogs = async () => {
   }
 };
 
-export const fetchBlogById = async (id) => {
+export const getBlog = async (id) => {
   try {
     const response = await axios.get(`${API_BASE_URL}/blogs/${id}`);
     return response.data;
