@@ -5,9 +5,9 @@ import BlogForm from "../components/BlogForm";
 const CreateBlog = () => {
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (blog) => {
+  const handleSubmit = async (blogData) => {
     try {
-      await createBlog(blog);
+      await createBlog(blogData);
       alert("Blog created successfully!");
     } catch (err) {
       setError("Error creating blog");
@@ -16,8 +16,8 @@ const CreateBlog = () => {
 
   return (
     <div>
-      <h2>Create Blog</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <h1>Create Blog</h1>
+      {error && <p>{error}</p>}
       <BlogForm onSubmit={handleSubmit} />
     </div>
   );
