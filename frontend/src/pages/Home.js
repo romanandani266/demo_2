@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { getAllBlogs } from "../api";
+import { fetchBlogs } from "../api";
 import BlogList from "../components/BlogList";
 
 const Home = () => {
   const [blogs, setBlogs] = useState([]);
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const loadBlogs = async () => {
       try {
-        const data = await getAllBlogs();
+        const data = await fetchBlogs();
         setBlogs(data);
       } catch (error) {
-        console.error("Error fetching blogs:", error);
+        console.error("Error loading blogs:", error);
       }
     };
-    fetchBlogs();
+    loadBlogs();
   }, []);
 
   return <BlogList blogs={blogs} />;
