@@ -1,10 +1,8 @@
-from fastapi import FastAPI, HTTPException, Path, Body, UploadFile, File
+from fastapi import FastAPI, HTTPException, Path
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 from typing import List, Optional
 from datetime import datetime
-import uuid
-import imghdr
 
 app = FastAPI()
 
@@ -18,27 +16,22 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-blogs = {}
-users = {"admin": {"password": "admin123"}}
-
 class BlogBase(BaseModel):
-    title: str
+    title: str = Field(..., max_length=255)
     content: str
-    image_url: Optional[HttpUrl] = None
+    image_url: HttpUrl
 
 class BlogCreate(BlogBase):
     pass
 
-class BlogUpdate(BaseModel):
-    title: Optional[str] = None
-    content: Optional[str] = None
-    image_url: Optional[HttpUrl] = None
+class BlogUpdate(BlogBase):
+    pass
 
-class BlogResponse(BlogBase):
-    id: str
+class Blog(BlogBase):
+    id: int
     created_at: datetime
 
 class LoginRequest(BaseModel):
@@ -49,70 +42,62 @@ class LoginResponse(BaseModel):
     message: str
     token: Optional[str] = None
 
-def validate_image(file: UploadFile):
-    valid_image_types = ["jpeg", "png", "gif"]
-    file_type = imghdr.what(file.file)
-    if file_type not in valid_image_types:
-        raise HTTPException(status_code=400, detail="Invalid image format. Only JPEG, PNG, and GIF are allowed.")
-    return True
+blogs = []
+blog_id_counter = 1
+users = {"admin": "password123"}
 
-@app.get("/blogs", response_model=List[BlogResponse])
-async def get_blogs():
-    return list(blogs.values())
+@app.get("/blogs", response_model=List[Blog])
+def get_all_blogs():
+    return blogs
 
-@app.get("/blogs/{blog_id}", response_model=BlogResponse)
-async def get_blog(blog_id: str = Path(...)):
-    blog = blogs.get(blog_id)
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog post not found")
-    return blog
+@app.get("/blogs/{blog_id}", response_model=Blog)
+def get_blog(blog_id: int = Path(...)):
+    for blog in blogs:
+        if blog.id == blog_id:
+            return blog
+    raise HTTPException(status_code=404, detail="Blog post not found")
 
-@app.post("/blogs", response_model=BlogResponse)
-async def create_blog(blog: BlogCreate = Body(...)):
-    blog_id = str(uuid.uuid4())
-    new_blog = {
-        "id": blog_id,
-        "title": blog.title,
-        "content": blog.content,
-        "image_url": blog.image_url,
-        "created_at": datetime.utcnow()
-    }
-    blogs[blog_id] = new_blog
+@app.post("/blogs", response_model=Blog, status_code=201)
+def create_blog(blog: BlogCreate):
+    global blog_id_counter
+    new_blog = Blog(
+        id=blog_id_counter,
+        title=blog.title,
+        content=blog.content,
+        image_url=blog.image_url,
+        created_at=datetime.now()
+    )
+    blogs.append(new_blog)
+    blog_id_counter += 1
     return new_blog
 
-@app.put("/blogs/{blog_id}", response_model=BlogResponse)
-async def update_blog(blog_id: str = Path(...), blog_update: BlogUpdate = Body(...)):
-    blog = blogs.get(blog_id)
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog post not found")
-    if blog_update.title is not None:
-        blog["title"] = blog_update.title
-    if blog_update.content is not None:
-        blog["content"] = blog_update.content
-    if blog_update.image_url is not None:
-        blog["image_url"] = blog_update.image_url
-    blogs[blog_id] = blog
-    return blog
+@app.put("/blogs/{blog_id}", response_model=Blog)
+def update_blog(blog_id: int, updated_blog: BlogUpdate):
+    for index, blog in enumerate(blogs):
+        if blog.id == blog_id:
+            blogs[index] = Blog(
+                id=blog.id,
+                title=updated_blog.title,
+                content=updated_blog.content,
+                image_url=updated_blog.image_url,
+                created_at=blog.created_at
+            )
+            return blogs[index]
+    raise HTTPException(status_code=404, detail="Blog post not found")
 
-@app.delete("/blogs/{blog_id}")
-async def delete_blog(blog_id: str = Path(...)):
-    if blog_id not in blogs:
-        raise HTTPException(status_code=404, detail="Blog post not found")
-    del blogs[blog_id]
-    return {"message": "Blog post deleted successfully"}
-
-@app.post("/blogs/upload-image")
-async def upload_image(file: UploadFile = File(...)):
-    validate_image(file)
-    return {"message": "Image uploaded successfully"}
+@app.delete("/blogs/{blog_id}", status_code=204)
+def delete_blog(blog_id: int):
+    for index, blog in enumerate(blogs):
+        if blog.id == blog_id:
+            del blogs[index]
+            return
+    raise HTTPException(status_code=404, detail="Blog post not found")
 
 @app.post("/login", response_model=LoginResponse)
-async def login(login_request: LoginRequest = Body(...)):
-    user = users.get(login_request.username)
-    if not user or user["password"] != login_request.password:
-        raise HTTPException(status_code=401, detail="Invalid username or password")
-    return {"message": "Login successful", "token": "dummy_token"}
+def login(login_request: LoginRequest):
+    username = login_request.username
+    password = login_request.password
 
-@app.get("/")
-async def root():
-    return {"message": "Welcome to the Modern Blog Platform API"}
+    if username in users and users[username] == password:
+        return LoginResponse(message="Login successful", token="fake-jwt-token")
+    raise HTTPException(status_code=401, detail="Invalid username or password")
