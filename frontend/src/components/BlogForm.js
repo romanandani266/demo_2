@@ -1,18 +1,22 @@
 import React, { useState } from "react";
-import { TextField, Button } from "@mui/material";
+import { TextField, Button, Box } from "@mui/material";
 
-const BlogForm = ({ onSubmit, initialData = {} }) => {
+function BlogForm({ initialData = {}, onSubmit }) {
   const [title, setTitle] = useState(initialData.title || "");
   const [content, setContent] = useState(initialData.content || "");
-  const [imageUrl, setImageUrl] = useState(initialData.image_url || "");
+  const [image, setImage] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ title, content, image_url: imageUrl });
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("content", content);
+    if (image) formData.append("image", image);
+    onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <Box component="form" onSubmit={handleSubmit}>
       <TextField
         label="Title"
         value={title}
@@ -25,22 +29,21 @@ const BlogForm = ({ onSubmit, initialData = {} }) => {
         value={content}
         onChange={(e) => setContent(e.target.value)}
         fullWidth
-        margin="normal"
         multiline
         rows={4}
-      />
-      <TextField
-        label="Image URL"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        fullWidth
         margin="normal"
+      />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setImage(e.target.files[0])}
+        style={{ margin: "16px 0" }}
       />
       <Button type="submit" variant="contained" color="primary">
         Submit
       </Button>
-    </form>
+    </Box>
   );
-};
+}
 
 export default BlogForm;
