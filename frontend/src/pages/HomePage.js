@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { getAllBlogs } from '../api';
-import BlogCard from '../components/BlogCard';
-import { Grid, Container } from '@mui/material';
+import React, { useEffect, useState } from "react";
+import { fetchBlogs } from "../api";
+import BlogList from "../components/BlogList";
 
-const HomePage = () => {
+function HomePage() {
   const [blogs, setBlogs] = useState([]);
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const loadBlogs = async () => {
       try {
-        const data = await getAllBlogs();
+        const data = await fetchBlogs();
         setBlogs(data);
       } catch (error) {
-        console.error('Error fetching blogs:', error);
+        console.error("Failed to load blogs:", error);
       }
     };
-    fetchBlogs();
+    loadBlogs();
   }, []);
 
-  return (
-    <Container>
-      <Grid container spacing={3}>
-        {blogs.map((blog) => (
-          <Grid item xs={12} sm={6} md={4} key={blog.id}>
-            <BlogCard blog={blog} />
-          </Grid>
-        ))}
-      </Grid>
-    </Container>
-  );
-};
+  return <BlogList blogs={blogs} />;
+}
 
 export default HomePage;
