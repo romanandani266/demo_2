@@ -1,35 +1,58 @@
 import React, { useEffect, useState } from "react";
-import { getInventory } from "../api";
-import { Container, Typography, List, ListItem } from "@mui/material";
+import { getInventory, updateInventory } from "../api";
+import { Table, TableBody, TableCell, TableHead, TableRow, Button, TextField } from "@mui/material";
 
-const Inventory = ({ token }) => {
+const Inventory = () => {
   const [inventory, setInventory] = useState([]);
 
   useEffect(() => {
     const fetchInventory = async () => {
-      try {
-        const data = await getInventory(token);
-        setInventory(data);
-      } catch (error) {
-        alert(error.detail || "Failed to fetch inventory");
-      }
+      const data = await getInventory();
+      setInventory(data);
     };
     fetchInventory();
-  }, [token]);
+  }, []);
+
+  const handleUpdate = async (productId, locationId, stockLevel) => {
+    await updateInventory({ product_id: productId, location_id: locationId, stock_level: stockLevel });
+    const updatedInventory = await getInventory();
+    setInventory(updatedInventory);
+  };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Inventory
-      </Typography>
-      <List>
-        {inventory.map((item) => (
-          <ListItem key={item.product_id}>
-            Product ID: {item.product_id}, Location ID: {item.location_id}, Stock Level: {item.stock_level}
-          </ListItem>
-        ))}
-      </List>
-    </Container>
+    <div>
+      <h2>Inventory</h2>
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableCell>Product ID</TableCell>
+            <TableCell>Location ID</TableCell>
+            <TableCell>Stock Level</TableCell>
+            <TableCell>Actions</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {inventory.map((item) => (
+            <TableRow key={`${item.product_id}-${item.location_id}`}>
+              <TableCell>{item.product_id}</TableCell>
+              <TableCell>{item.location_id}</TableCell>
+              <TableCell>
+                <TextField
+                  type="number"
+                  defaultValue={item.stock_level}
+                  onBlur={(e) => handleUpdate(item.product_id, item.location_id, parseInt(e.target.value))}
+                />
+              </TableCell>
+              <TableCell>
+                <Button onClick={() => handleUpdate(item.product_id, item.location_id, item.stock_level)}>
+                  Update
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 };
 
