@@ -1,18 +1,15 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
-from typing import List, Optional
-from uuid import uuid4
-import os
-import aiofiles
+from typing import List
 
-app = FastAPI()
+app = FastAPI(title="Retail Inventory Management System", version="1.0.0")
 
 origins = [
     "http://localhost:3000",
     "https://yourfrontend.com"
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
@@ -21,100 +18,90 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-blogs = {}
-users = {"admin": {"username": "admin", "password": "admin123"}}
+mock_inventory = [
+    {"product_id": 1, "location_id": 1, "stock_level": 50},
+    {"product_id": 2, "location_id": 1, "stock_level": 20}
+]
+mock_sales = [
+    {"product_id": 1, "quantity_sold": 10, "date": "2023-10-01"},
+    {"product_id": 2, "quantity_sold": 5, "date": "2023-10-01"}
+]
+mock_alerts = [
+    {"product_id": 2, "location_id": 1, "alert_message": "Low stock: Restock needed"}
+]
+mock_users = [
+    {"username": "admin", "password": "admin123", "role": "admin"},
+    {"username": "manager", "password": "manager123", "role": "manager"}
+]
 
-class Blog(BaseModel):
-    id: str
-    title: str
-    content: str
-    image_url: Optional[str] = None
-    created_at: str
-    updated_at: str
+class InventoryItem(BaseModel):
+    product_id: int
+    location_id: int
+    stock_level: int
 
-class UserLogin(BaseModel):
+class SalesData(BaseModel):
+    product_id: int
+    quantity_sold: int
+    date: str
+
+class RestockingAlert(BaseModel):
+    product_id: int
+    location_id: int
+    alert_message: str
+
+class User(BaseModel):
+    username: str
+    role: str
+
+class LoginRequest(BaseModel):
     username: str
     password: str
 
-async def validate_image(file: UploadFile):
-    allowed_extensions = {"jpg", "jpeg", "png", "gif"}
-    file_extension = file.filename.split(".")[-1].lower()
-    if file_extension not in allowed_extensions:
-        raise HTTPException(status_code=400, detail="Invalid image format.")
-    if file.size > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Image size exceeds 5 MB.")
+def get_current_user(token: str) -> User:
+    user = next((user for user in mock_users if user["username"] == token), None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid authentication credentials")
+    return User(username=user["username"], role=user["role"])
 
-@app.post("/login")
-async def login(user: UserLogin):
-    if user.username in users and users[user.username]["password"] == user.password:
-        return {"message": "Login successful", "username": user.username}
-    raise HTTPException(status_code=401, detail="Invalid username or password.")
+@app.get("/api/inventory", response_model=List[InventoryItem])
+def get_inventory(token: str):
+    get_current_user(token)
+    return mock_inventory
 
-@app.get("/blogs")
-async def get_blogs():
-    return list(blogs.values())
+@app.put("/api/inventory", response_model=InventoryItem)
+def update_inventory(item: InventoryItem, token: str):
+    get_current_user(token)
+    for inventory_item in mock_inventory:
+        if inventory_item["product_id"] == item.product_id and inventory_item["location_id"] == item.location_id:
+            inventory_item["stock_level"] = item.stock_level
+            return inventory_item
+    raise HTTPException(status_code=404, detail="Inventory item not found")
 
-@app.get("/blogs/{blog_id}")
-async def get_blog(blog_id: str):
-    blog = blogs.get(blog_id)
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found.")
-    return blog
+@app.get("/api/alerts", response_model=List[RestockingAlert])
+def get_restocking_alerts(token: str):
+    get_current_user(token)
+    return mock_alerts
 
-@app.post("/blogs")
-async def create_blog(title: str = Form(...), content: str = Form(...), image: Optional[UploadFile] = File(None)):
-    blog_id = str(uuid4())
-    image_url = None
-    if image:
-        await validate_image(image)
-        image_path = f"images/{blog_id}_{image.filename}"
-        os.makedirs("images", exist_ok=True)
-        async with aiofiles.open(image_path, "wb") as out_file:
-            content = await image.read()
-            await out_file.write(content)
-        image_url = f"/{image_path}"
-    blog = Blog(
-        id=blog_id,
-        title=title,
-        content=content,
-        image_url=image_url,
-        created_at="2023-01-01T00:00:00Z",
-        updated_at="2023-01-01T00:00:00Z"
-    )
-    blogs[blog_id] = blog.dict()
-    return blog
+@app.get("/api/sales-trends", response_model=List[SalesData])
+def get_sales_trends(token: str):
+    get_current_user(token)
+    return mock_sales
 
-@app.put("/blogs/{blog_id}")
-async def update_blog(blog_id: str, title: Optional[str] = Form(None), content: Optional[str] = Form(None), image: Optional[UploadFile] = File(None)):
-    blog = blogs.get(blog_id)
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found.")
-    if title:
-        blog["title"] = title
-    if content:
-        blog["content"] = content
-    if image:
-        await validate_image(image)
-        image_path = f"images/{blog_id}_{image.filename}"
-        os.makedirs("images", exist_ok=True)
-        async with aiofiles.open(image_path, "wb") as out_file:
-            content = await image.read()
-            await out_file.write(content)
-        blog["image_url"] = f"/{image_path}"
-    blog["updated_at"] = "2023-01-01T00:00:00Z"
-    blogs[blog_id] = blog
-    return blog
+@app.post("/api/auth/login")
+def login(login_request: LoginRequest):
+    user = next((user for user in mock_users if user["username"] == login_request.username), None)
+    if not user or user["password"] != login_request.password:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return {"access_token": user["username"], "token_type": "bearer"}
 
-@app.delete("/blogs/{blog_id}")
-async def delete_blog(blog_id: str):
-    blog = blogs.pop(blog_id, None)
-    if not blog:
-        raise HTTPException(status_code=404, detail="Blog not found.")
-    return JSONResponse(content={"message": "Blog deleted successfully."})
+@app.post("/api/users", response_model=User)
+def create_user(user: User, token: str):
+    current_user = get_current_user(token)
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to create users")
+    mock_users.append({"username": user.username, "password": "default", "role": user.role})
+    return user
 
-@app.get("/images/{image_name}")
-async def get_image(image_name: str):
-    image_path = f"images/{image_name}"
-    if not os.path.exists(image_path):
-        raise HTTPException(status_code=404, detail="Image not found.")
-    return FileResponse(image_path)
+@app.get("/")
+def root():
+    return {"message": "Welcome to the Retail Inventory Management System API"}
