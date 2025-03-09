@@ -2,62 +2,52 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080/api";
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
-});
-
-export const login = async (username, password) => {
+export const getInventory = async () => {
   try {
-    const response = await api.post("/auth/login", { username, password });
+    const response = await axios.get(`${API_BASE_URL}/inventory`);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    console.error("Error fetching inventory:", error);
+    throw error;
   }
 };
 
-export const getInventory = async (token) => {
+export const updateInventory = async (item) => {
   try {
-    const response = await api.get("/inventory", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.put(`${API_BASE_URL}/inventory`, item);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    console.error("Error updating inventory:", error);
+    throw error;
   }
 };
 
-export const updateInventory = async (item, token) => {
+export const getRestockingAlerts = async () => {
   try {
-    const response = await api.put("/inventory", item, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.get(`${API_BASE_URL}/alerts`);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    console.error("Error fetching alerts:", error);
+    throw error;
   }
 };
 
-export const getAlerts = async (token) => {
+export const getSalesTrends = async () => {
   try {
-    const response = await api.get("/alerts", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.get(`${API_BASE_URL}/sales-trends`);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    console.error("Error fetching sales trends:", error);
+    throw error;
   }
 };
 
-export const getSalesTrends = async (token) => {
+export const login = async (credentials) => {
   try {
-    const response = await api.get("/sales-trends", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
     return response.data;
   } catch (error) {
-    throw error.response.data;
+    console.error("Error logging in:", error);
+    throw error;
   }
 };
