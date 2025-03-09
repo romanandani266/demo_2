@@ -1,47 +1,27 @@
 import React, { useState } from "react";
-import { TextField, Button, Container, Typography } from "@mui/material";
 import { login } from "../api";
+import { TextField, Button } from "@mui/material";
 
-const Login = ({ setToken }) => {
+const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     try {
-      const data = await login(username, password);
-      setToken(data.access_token);
+      const response = await login({ username, password });
+      alert(`Login successful! Token: ${response.access_token}`);
     } catch (error) {
-      alert(error.detail || "Login failed");
+      alert("Login failed!");
     }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>
-        Login
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          label="Username"
-          fullWidth
-          margin="normal"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <TextField
-          label="Password"
-          type="password"
-          fullWidth
-          margin="normal"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <Button type="submit" variant="contained" color="primary">
-          Login
-        </Button>
-      </form>
-    </Container>
+    <div>
+      <h2>Login</h2>
+      <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+      <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <Button onClick={handleLogin}>Login</Button>
+    </div>
   );
 };
 
