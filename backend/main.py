@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 from uuid import uuid4
+import pandas as pd
+import io
 
 app = FastAPI()
 
@@ -94,3 +96,15 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Invalid image format. Only JPEG and PNG are supported.")
     image_url = f"https://example.com/images/{file.filename}"
     return {"image_url": image_url}
+
+@app.post("/upload-excel")
+async def upload_excel(file: UploadFile = File(...)):
+    if file.content_type not in ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "application/vnd.ms-excel"]:
+        raise HTTPException(status_code=400, detail="Invalid file format. Only Excel files are supported.")
+    try:
+        content = await file.read()
+        df = pd.read_excel(io.BytesIO(content))
+        data = df.to_dict(orient="records")
+        return {"data": data}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing the Excel file: {str(e)}")
