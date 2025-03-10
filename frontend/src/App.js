@@ -1,13 +1,16 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import { CssBaseline, ThemeProvider } from '@mui/material';
+import theme from './theme';
+import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import CreateEditBlog from './pages/CreateEditBlog';
 import BlogDetailPage from './pages/BlogDetailPage';
-import Navbar from './components/Navbar';
 
-const App = () => {
+function App() {
   return (
-    <div>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
@@ -15,8 +18,8 @@ const App = () => {
         <Route path="/edit/:id" element={<CreateEditBlog />} />
         <Route path="/blogs/:id" element={<BlogDetailPage />} />
       </Routes>
-    </div>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;
