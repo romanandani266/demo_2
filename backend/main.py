@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Path, Body
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, HttpUrl, Field
 from typing import List, Optional
@@ -19,80 +19,91 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
+blogs = []
+users = {"admin": "password123"}
+blog_id_counter = 1
+
 class BlogBase(BaseModel):
-    title: str = Field(..., max_length=255)
-    content: str = Field(...)
-    image_url: HttpUrl = Field(...)
+    title: str = Field(..., min_length=1, max_length=255)
+    content: str = Field(..., min_length=1)
+    image_url: HttpUrl
 
 class BlogCreate(BlogBase):
     pass
 
-class BlogUpdate(BaseModel):
-    title: Optional[str] = Field(None, max_length=255)
-    content: Optional[str] = Field(None)
-    image_url: Optional[HttpUrl] = Field(None)
+class BlogUpdate(BlogBase):
+    pass
 
-class Blog(BlogBase):
+class BlogResponse(BlogBase):
     id: int
     created_at: datetime
 
-class UserLogin(BaseModel):
+class LoginRequest(BaseModel):
     username: str
     password: str
 
-blogs = []
-blog_id_counter = 1
-users = {"admin": "password123"}
+class LoginResponse(BaseModel):
+    message: str
+    token: Optional[str] = None
 
-@app.get("/blogs", response_model=List[Blog])
+def find_blog(blog_id: int):
+    for blog in blogs:
+        if blog["id"] == blog_id:
+            return blog
+    return None
+
+@app.get("/blogs", response_model=List[BlogResponse])
 def get_all_blogs():
     return blogs
 
-@app.get("/blogs/{blog_id}", response_model=Blog)
-def get_blog(blog_id: int = Path(...)):
-    for blog in blogs:
-        if blog.id == blog_id:
-            return blog
-    raise HTTPException(status_code=404, detail="Blog post not found")
+@app.get("/blogs/{blog_id}", response_model=BlogResponse)
+def get_blog(blog_id: int):
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    return blog
 
-@app.post("/blogs", response_model=Blog, status_code=201)
+@app.post("/blogs", response_model=BlogResponse, status_code=201)
 def create_blog(blog: BlogCreate):
     global blog_id_counter
-    new_blog = Blog(
-        id=blog_id_counter,
-        title=blog.title,
-        content=blog.content,
-        image_url=blog.image_url,
-        created_at=datetime.utcnow()
-    )
+    new_blog = {
+        "id": blog_id_counter,
+        "title": blog.title,
+        "content": blog.content,
+        "image_url": blog.image_url,
+        "created_at": datetime.utcnow()
+    }
     blogs.append(new_blog)
     blog_id_counter += 1
     return new_blog
 
-@app.put("/blogs/{blog_id}", response_model=Blog)
-def update_blog(blog_id: int = Path(...), blog_update: BlogUpdate = Body(...)):
-    for blog in blogs:
-        if blog.id == blog_id:
-            if blog_update.title is not None:
-                blog.title = blog_update.title
-            if blog_update.content is not None:
-                blog.content = blog_update.content
-            if blog_update.image_url is not None:
-                blog.image_url = blog_update.image_url
-            return blog
-    raise HTTPException(status_code=404, detail="Blog post not found")
+@app.put("/blogs/{blog_id}", response_model=BlogResponse)
+def update_blog(blog_id: int, updated_blog: BlogUpdate):
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+
+    blog["title"] = updated_blog.title
+    blog["content"] = updated_blog.content
+    blog["image_url"] = updated_blog.image_url
+    return blog
 
 @app.delete("/blogs/{blog_id}", status_code=204)
-def delete_blog(blog_id: int = Path(...)):
+def delete_blog(blog_id: int):
     global blogs
-    for blog in blogs:
-        if blog.id == blog_id:
-            blogs = [b for b in blogs if b.id != blog_id]
-            return
-    raise HTTPException(status_code=404, detail="Blog post not found")
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
 
-@app.post("/login")
-def login(user: UserLogin):
-    if user.username in users and users[user.username] == user.password:
-        return {"message": "Login successful", "username": user.username}
-    raise HTTPException(status_code=401, detail="Invalid username or password")
+    blogs = [b for b in blogs if b["id"] != blog_id]
+    return {"message": "Blog deleted successfully"}
+
+@app.post("/login", response_model=LoginResponse)
+def login(login_request: LoginRequest):
+    username = login_request.username
+    password = login_request.password
+
+    if username in users and users[username] == password:
+        return {"message": "Login successful", "token": "dummy_token"}
+    else:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
