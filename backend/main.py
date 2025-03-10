@@ -26,7 +26,7 @@ user_id_counter = 1
 class Blog(BaseModel):
     title: str = Field(..., min_length=3, max_length=100)
     content: str = Field(..., min_length=10)
-    image_url: Optional[str] = Field(None, regex=r"^(http|https)://.*\.(jpg|jpeg|png|gif)$")
+    image_url: Optional[str] = Field(None, pattern=r"^(http|https)://.*\.(jpg|jpeg|png|gif)$")
 
 class BlogResponse(Blog):
     id: int
