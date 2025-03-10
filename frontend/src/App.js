@@ -1,10 +1,9 @@
-import React from "react";
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import CreateBlog from "./pages/CreateBlog";
-import EditBlog from "./pages/EditBlog";
-import BlogView from "./pages/BlogView";
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import Home from './pages/Home';
+import CreateEditBlog from './pages/CreateEditBlog';
+import BlogDetailPage from './pages/BlogDetailPage';
+import Navbar from './components/Navbar';
 
 const App = () => {
   return (
@@ -12,9 +11,9 @@ const App = () => {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/create" element={<CreateBlog />} />
-        <Route path="/edit/:id" element={<EditBlog />} />
-        <Route path="/blogs/:id" element={<BlogView />} />
+        <Route path="/create" element={<CreateEditBlog />} />
+        <Route path="/edit/:id" element={<CreateEditBlog />} />
+        <Route path="/blogs/:id" element={<BlogDetailPage />} />
       </Routes>
     </div>
   );
