@@ -1,33 +1,33 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { fetchBlogById } from "../api";
-import { Typography, Box } from "@mui/material";
+import { getBlogById } from "../api";
+import { Typography, Container } from "@mui/material";
 
-function BlogPage() {
+const BlogPage = () => {
   const { id } = useParams();
   const [blog, setBlog] = useState(null);
 
   useEffect(() => {
-    const loadBlog = async () => {
+    const fetchBlog = async () => {
       try {
-        const data = await fetchBlogById(id);
+        const data = await getBlogById(id);
         setBlog(data);
       } catch (error) {
-        console.error("Failed to load blog:", error);
+        console.error("Error fetching blog:", error);
       }
     };
-    loadBlog();
+
+    fetchBlog();
   }, [id]);
 
   if (!blog) return <Typography>Loading...</Typography>;
 
   return (
-    <Box>
+    <Container>
       <Typography variant="h3">{blog.title}</Typography>
       <Typography variant="body1">{blog.content}</Typography>
-      {blog.image_url && <img src={blog.image_url} alt={blog.title} style={{ width: "100%" }} />}
-    </Box>
+    </Container>
   );
-}
+};
 
 export default BlogPage;
