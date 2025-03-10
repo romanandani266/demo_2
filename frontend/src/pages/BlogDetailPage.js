@@ -19,20 +19,18 @@ const BlogDetailPage = () => {
     fetchBlog();
   }, [id]);
 
-  if (!blog) return <div>Loading...</div>;
+  if (!blog) return <Typography>Loading...</Typography>;
 
   return (
     <Container>
-      <Typography variant="h3" gutterBottom>
+      <Typography variant="h3" style={{ color: 'blue', textShadow: '1px 1px 2px gray' }}>
         {blog.title}
       </Typography>
-      <img src={blog.image_url} alt={blog.title} style={{ width: '100%' }} />
-      <Typography variant="body1" style={{ marginTop: '20px' }}>
+      <Typography variant="body1" style={{ margin: '20px 0' }}>
         {blog.content}
       </Typography>
-      <Typography variant="caption" display="block" style={{ marginTop: '10px' }}>
-        Created at: {new Date(blog.created_at).toLocaleString()}
-      </Typography>
+      <img src={blog.image_url} alt={blog.title} style={{ width: '100%' }} />
+      <Typography variant="caption">Created at: {new Date(blog.created_at).toLocaleString()}</Typography>
     </Container>
   );
 };
