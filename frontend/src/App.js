@@ -1,28 +1,22 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { CssBaseline, ThemeProvider, createTheme } from "@mui/material";
 import Navbar from "./components/Navbar";
 import Home from "./pages/Home";
-import BlogPage from "./pages/BlogPage";
-import CreateBlogPage from "./pages/CreateBlogPage";
-
-const theme = createTheme({
-  palette: {
-    mode: "light",
-  },
-});
+import CreateBlog from "./pages/CreateBlog";
+import EditBlog from "./pages/EditBlog";
+import BlogView from "./pages/BlogView";
 
 const App = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <div>
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/blogs/:id" element={<BlogPage />} />
-        <Route path="/create" element={<CreateBlogPage />} />
+        <Route path="/create" element={<CreateBlog />} />
+        <Route path="/edit/:id" element={<EditBlog />} />
+        <Route path="/blogs/:id" element={<BlogView />} />
       </Routes>
-    </ThemeProvider>
+    </div>
   );
 };
 
