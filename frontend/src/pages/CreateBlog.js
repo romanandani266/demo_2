@@ -1,25 +1,51 @@
 import React, { useState } from "react";
 import { createBlog } from "../api";
-import BlogForm from "../components/BlogForm";
+import { TextField, Button } from "@mui/material";
 
 const CreateBlog = () => {
-  const [error, setError] = useState(null);
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+  const [imageUrl, setImageUrl] = useState("");
 
-  const handleSubmit = async (blogData) => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      await createBlog(blogData);
+      const newBlog = { title, content, image_url: imageUrl };
+      await createBlog(newBlog);
       alert("Blog created successfully!");
-    } catch (err) {
-      setError("Error creating blog");
+    } catch (error) {
+      console.error("Error creating blog:", error);
     }
   };
 
   return (
-    <div>
-      <h1>Create Blog</h1>
-      {error && <p>{error}</p>}
-      <BlogForm onSubmit={handleSubmit} />
-    </div>
+    <form onSubmit={handleSubmit}>
+      <TextField
+        label="Title"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        fullWidth
+        required
+      />
+      <TextField
+        label="Content"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        fullWidth
+        multiline
+        rows={4}
+        required
+      />
+      <TextField
+        label="Image URL"
+        value={imageUrl}
+        onChange={(e) => setImageUrl(e.target.value)}
+        fullWidth
+      />
+      <Button type="submit" variant="contained" color="primary">
+        Create Blog
+      </Button>
+    </form>
   );
 };
 
