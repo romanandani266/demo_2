@@ -1,17 +1,21 @@
 import React, { useState } from "react";
-import { createBlog } from "../api";
+import { createBlog, uploadImage } from "../api";
 import { TextField, Button } from "@mui/material";
 
 const CreateBlog = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
+  const [image, setImage] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const newBlog = { title, content, image_url: imageUrl };
-      await createBlog(newBlog);
+      let imageUrl = null;
+      if (image) {
+        const response = await uploadImage(image);
+        imageUrl = response.data.image_url;
+      }
+      await createBlog({ title, content, image_url: imageUrl });
       alert("Blog created successfully!");
     } catch (error) {
       console.error("Error creating blog:", error);
@@ -22,25 +26,24 @@ const CreateBlog = () => {
     <form onSubmit={handleSubmit}>
       <TextField
         label="Title"
+        fullWidth
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        fullWidth
         required
       />
       <TextField
         label="Content"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
         fullWidth
         multiline
         rows={4}
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
         required
       />
-      <TextField
-        label="Image URL"
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        fullWidth
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => setImage(e.target.files[0])}
       />
       <Button type="submit" variant="contained" color="primary">
         Create Blog
