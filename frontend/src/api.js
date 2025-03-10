@@ -1,53 +1,59 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:8080/api";
+const API_BASE_URL = "http://localhost:8080";
 
-export const getInventory = async () => {
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+export const fetchBlogs = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/inventory`);
+    const response = await api.get("/blogs");
     return response.data;
   } catch (error) {
-    console.error("Error fetching inventory:", error);
+    console.error("Error fetching blogs:", error);
     throw error;
   }
 };
 
-export const updateInventory = async (item) => {
+export const fetchBlogDetails = async (blogId) => {
   try {
-    const response = await axios.put(`${API_BASE_URL}/inventory`, item);
+    const response = await api.get(`/blogs/${blogId}`);
     return response.data;
   } catch (error) {
-    console.error("Error updating inventory:", error);
+    console.error("Error fetching blog details:", error);
     throw error;
   }
 };
 
-export const getRestockingAlerts = async () => {
+export const createBlog = async (blogData) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/alerts`);
+    const response = await api.post("/blogs", blogData);
     return response.data;
   } catch (error) {
-    console.error("Error fetching alerts:", error);
+    console.error("Error creating blog:", error);
     throw error;
   }
 };
 
-export const getSalesTrends = async () => {
+export const updateBlog = async (blogId, blogData) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/sales-trends`);
+    const response = await api.put(`/blogs/${blogId}`, blogData);
     return response.data;
   } catch (error) {
-    console.error("Error fetching sales trends:", error);
+    console.error("Error updating blog:", error);
     throw error;
   }
 };
 
-export const login = async (credentials) => {
+export const deleteBlog = async (blogId) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, credentials);
-    return response.data;
+    await api.delete(`/blogs/${blogId}`);
   } catch (error) {
-    console.error("Error logging in:", error);
+    console.error("Error deleting blog:", error);
     throw error;
   }
 };
