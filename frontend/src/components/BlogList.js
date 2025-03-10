@@ -1,17 +1,27 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { fetchBlogs } from "../api";
+import { Card, CardContent, Typography, Button } from "@mui/material";
 import { Link } from "react-router-dom";
-import { Card, CardContent, Typography } from "@mui/material";
 
-const BlogList = ({ blogs }) => {
+const BlogList = () => {
+  const [blogs, setBlogs] = useState([]);
+
+  useEffect(() => {
+    fetchBlogs()
+      .then((response) => setBlogs(response.data))
+      .catch((error) => console.error("Error fetching blogs:", error));
+  }, []);
+
   return (
     <div>
       {blogs.map((blog) => (
         <Card key={blog.id} sx={{ marginBottom: 2 }}>
           <CardContent>
-            <Typography variant="h5" component={Link} to={`/blogs/${blog.id}`}>
-              {blog.title}
-            </Typography>
-            <Typography variant="body2">{blog.content.substring(0, 100)}...</Typography>
+            <Typography variant="h5">{blog.title}</Typography>
+            <Typography variant="body2">{blog.content.slice(0, 100)}...</Typography>
+            <Button component={Link} to={`/blogs/${blog.id}`}>
+              Read More
+            </Button>
           </CardContent>
         </Card>
       ))}
