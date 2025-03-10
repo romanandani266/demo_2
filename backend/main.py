@@ -1,13 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Path, Body
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
+from pydantic import BaseModel, Field
+from typing import List, Optional
 
 app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://yourfrontend.com",
+    "https://yourfrontend.com"
 ]
 
 app.add_middleware(
@@ -15,82 +15,112 @@ app.add_middleware(
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
 
-mock_inventory = [
-    {"product_id": 1, "location_id": 1, "stock_level": 50},
-    {"product_id": 2, "location_id": 1, "stock_level": 20},
-]
-mock_sales = [
-    {"product_id": 1, "location_id": 1, "sales_data": [5, 10, 15]},
-    {"product_id": 2, "location_id": 1, "sales_data": [2, 3, 4]},
-]
-mock_alerts = [
-    {"product_id": 2, "location_id": 1, "alert_message": "Stock below threshold!"},
-]
-mock_users = [
-    {"username": "admin", "password": "admin123", "role": "admin"},
-    {"username": "manager", "password": "manager123", "role": "manager"},
-]
+blogs = []
+users = []
+blog_id_counter = 1
+user_id_counter = 1
 
-class InventoryItem(BaseModel):
-    product_id: int
-    location_id: int
-    stock_level: int
+class Blog(BaseModel):
+    title: str = Field(..., min_length=3, max_length=100)
+    content: str = Field(..., min_length=10)
+    image_url: Optional[str] = Field(None, regex=r"^(http|https)://.*\.(jpg|jpeg|png|gif)$")
 
-class SalesTrend(BaseModel):
-    product_id: int
-    location_id: int
-    sales_data: List[int]
-
-class RestockingAlert(BaseModel):
-    product_id: int
-    location_id: int
-    alert_message: str
+class BlogResponse(Blog):
+    id: int
+    created_at: str
+    updated_at: Optional[str] = None
 
 class User(BaseModel):
-    username: str
-    role: str
+    username: str = Field(..., min_length=3, max_length=50)
+    password: str = Field(..., min_length=6)
 
 class LoginRequest(BaseModel):
     username: str
     password: str
 
 class LoginResponse(BaseModel):
-    access_token: str
-    token_type: str
+    message: str
+    token: str
 
-@app.get("/api/inventory", response_model=List[InventoryItem])
-def get_inventory():
-    return mock_inventory
+def find_blog(blog_id: int):
+    for blog in blogs:
+        if blog["id"] == blog_id:
+            return blog
+    return None
 
-@app.put("/api/inventory", response_model=InventoryItem)
-def update_inventory(item: InventoryItem):
-    for inventory_item in mock_inventory:
-        if inventory_item["product_id"] == item.product_id and inventory_item["location_id"] == item.location_id:
-            inventory_item["stock_level"] = item.stock_level
-            return inventory_item
-    raise HTTPException(status_code=404, detail="Inventory item not found")
+def find_user(username: str):
+    for user in users:
+        if user["username"] == username:
+            return user
+    return None
 
-@app.get("/api/alerts", response_model=List[RestockingAlert])
-def get_restocking_alerts():
-    return mock_alerts
+@app.post("/register", status_code=201)
+async def register_user(user: User):
+    global user_id_counter
+    if find_user(user.username):
+        raise HTTPException(status_code=400, detail="Username already exists")
+    new_user = {
+        "id": user_id_counter,
+        "username": user.username,
+        "password": user.password
+    }
+    users.append(new_user)
+    user_id_counter += 1
+    return {"message": "User registered successfully"}
 
-@app.get("/api/sales-trends", response_model=List[SalesTrend])
-def get_sales_trends():
-    return mock_sales
-
-@app.post("/api/auth/login", response_model=LoginResponse)
-def login(login_request: LoginRequest):
-    user = next((user for user in mock_users if user["username"] == login_request.username and user["password"] == login_request.password), None)
-    if not user:
+@app.post("/login", response_model=LoginResponse)
+async def login_user(login_request: LoginRequest):
+    user = find_user(login_request.username)
+    if not user or user["password"] != login_request.password:
         raise HTTPException(status_code=401, detail="Invalid username or password")
-    return {"access_token": user["username"], "token_type": "bearer"}
+    token = f"mock-token-for-{user['username']}"
+    return {"message": "Login successful", "token": token}
 
-@app.post("/api/users", response_model=User)
-def create_user(user: User, current_user: User = Depends(lambda: {"username": "admin", "role": "admin"})):
-    if current_user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="Not authorized to create users")
-    mock_users.append(user.dict())
-    return user
+@app.get("/blogs", response_model=List[BlogResponse])
+async def get_blogs():
+    return blogs
+
+@app.get("/blogs/{blog_id}", response_model=BlogResponse)
+async def get_blog(blog_id: int = Path(...)):
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    return blog
+
+@app.post("/blogs", response_model=BlogResponse, status_code=201)
+async def create_blog(blog: Blog):
+    global blog_id_counter
+    new_blog = {
+        "id": blog_id_counter,
+        "title": blog.title,
+        "content": blog.content,
+        "image_url": blog.image_url or "https://plus.unsplash.com/premium_photo-1684581214880-2043e5bc8b8b?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "created_at": "2023-01-01T00:00:00Z",
+        "updated_at": None
+    }
+    blogs.append(new_blog)
+    blog_id_counter += 1
+    return new_blog
+
+@app.put("/blogs/{blog_id}", response_model=BlogResponse)
+async def update_blog(blog_id: int = Path(...), updated_blog: Blog = Body(...)):
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    blog["title"] = updated_blog.title
+    blog["content"] = updated_blog.content
+    blog["image_url"] = updated_blog.image_url or blog["image_url"]
+    blog["updated_at"] = "2023-01-02T00:00:00Z"
+    return blog
+
+@app.delete("/blogs/{blog_id}", status_code=204)
+async def delete_blog(blog_id: int = Path(...)):
+    global blogs
+    blog = find_blog(blog_id)
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    blogs = [b for b in blogs if b["id"] != blog_id]
+    return None
