@@ -1,37 +1,22 @@
-import React, { useEffect, useState } from "react";
-import { getBlogs } from "../api";
+import React from "react";
 import { Link } from "react-router-dom";
-import { Card, CardContent, Typography, Grid } from "@mui/material";
+import { Card, CardContent, Typography, Button } from "@mui/material";
 
-const BlogList = () => {
-  const [blogs, setBlogs] = useState([]);
-
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const data = await getBlogs();
-        setBlogs(data);
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-      }
-    };
-    fetchBlogs();
-  }, []);
-
+const BlogList = ({ blogs }) => {
   return (
-    <Grid container spacing={2}>
+    <div>
       {blogs.map((blog) => (
-        <Grid item xs={12} key={blog.id}>
-          <Card>
-            <CardContent>
-              <Typography variant="h5">{blog.title}</Typography>
-              <Typography variant="body2">{blog.content.slice(0, 100)}...</Typography>
-              <Link to={`/blogs/${blog.id}`}>Read More</Link>
-            </CardContent>
-          </Card>
-        </Grid>
+        <Card key={blog.id} style={{ marginBottom: "1rem" }}>
+          <CardContent>
+            <Typography variant="h5">{blog.title}</Typography>
+            <Typography variant="body2">{blog.content}</Typography>
+            <Button component={Link} to={`/blogs/${blog.id}`} color="primary">
+              View Details
+            </Button>
+          </CardContent>
+        </Card>
       ))}
-    </Grid>
+    </div>
   );
 };
 
