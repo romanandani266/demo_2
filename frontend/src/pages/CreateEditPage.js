@@ -1,67 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { createBlog, updateBlog, getBlogById } from '../api';
-import { TextField, Button, Container } from '@mui/material';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { TextField, Button, Container } from "@mui/material";
+import { createBlog, updateBlog, getBlogById } from "../api";
 
 const CreateEditPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [formData, setFormData] = useState({ title: "", content: "", image_url: "" });
 
   useEffect(() => {
     if (id) {
       const fetchBlog = async () => {
         try {
           const blog = await getBlogById(id);
-          setTitle(blog.title);
-          setContent(blog.content);
-          setImageUrl(blog.image_url);
+          setFormData(blog);
         } catch (error) {
-          console.error('Error fetching blog:', error);
+          console.error("Error fetching blog:", error);
         }
       };
+
       fetchBlog();
     }
   }, [id]);
 
-  const handleSubmit = async () => {
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const blog = { title, content, image_url: imageUrl };
       if (id) {
-        await updateBlog(id, blog);
+        await updateBlog(id, formData);
       } else {
-        await createBlog(blog);
+        await createBlog(formData);
       }
-      navigate('/');
+      navigate("/");
     } catch (error) {
-      console.error('Error saving blog:', error);
+      console.error("Error saving blog:", error);
     }
   };
 
   return (
     <Container>
-      <TextField
-        label="Title"
-        fullWidth
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        margin="normal"
-      />
-      <ReactQuill value={content} onChange={setContent} />
-      <TextField
-        label="Image URL"
-        fullWidth
-        value={imageUrl}
-        onChange={(e) => setImageUrl(e.target.value)}
-        margin="normal"
-      />
-      <Button variant="contained" color="primary" onClick={handleSubmit}>
-        Save
-      </Button>
+      <form onSubmit={handleSubmit}>
+        <TextField
+          label="Title"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Content"
+          name="content"
+          value={formData.content}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+          multiline
+          rows={4}
+        />
+        <TextField
+          label="Image URL"
+          name="image_url"
+          value={formData.image_url}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+        <Button type="submit" variant="contained" color="primary">
+          {id ? "Update Blog" : "Create Blog"}
+        </Button>
+      </form>
     </Container>
   );
 };
