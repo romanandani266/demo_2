@@ -1,24 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { getAllBlogs } from "../api";
+import React from "react";
 import BlogList from "../components/BlogList";
 
 const Home = () => {
-  const [blogs, setBlogs] = useState([]);
-
-  useEffect(() => {
-    const fetchBlogs = async () => {
-      try {
-        const data = await getAllBlogs();
-        setBlogs(data);
-      } catch (error) {
-        console.error("Error fetching blogs:", error);
-      }
-    };
-
-    fetchBlogs();
-  }, []);
-
-  return <BlogList blogs={blogs} />;
+  return (
+    <div>
+      <h1>Welcome to the Modern Blog Platform</h1>
+      <BlogList />
+    </div>
+  );
 };
 
 export default Home;
