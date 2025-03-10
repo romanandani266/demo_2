@@ -2,51 +2,25 @@ import axios from "axios";
 
 const API_BASE_URL = "http://localhost:8080";
 
-export const getAllBlogs = async () => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/blogs`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching blogs:", error);
-    throw error;
-  }
-};
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+});
 
-export const getBlogById = async (id) => {
-  try {
-    const response = await axios.get(`${API_BASE_URL}/blogs/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching blog:", error);
-    throw error;
-  }
-};
+export const fetchBlogs = (page = 1, limit = 10) =>
+  api.get(`/blogs?page=${page}&limit=${limit}`);
 
-export const createBlog = async (blog) => {
-  try {
-    const response = await axios.post(`${API_BASE_URL}/blogs`, blog);
-    return response.data;
-  } catch (error) {
-    console.error("Error creating blog:", error);
-    throw error;
-  }
-};
+export const fetchBlogById = (id) => api.get(`/blogs/${id}`);
 
-export const updateBlog = async (id, blog) => {
-  try {
-    const response = await axios.put(`${API_BASE_URL}/blogs/${id}`, blog);
-    return response.data;
-  } catch (error) {
-    console.error("Error updating blog:", error);
-    throw error;
-  }
-};
+export const createBlog = (data) => api.post("/blogs", data);
 
-export const deleteBlog = async (id) => {
-  try {
-    await axios.delete(`${API_BASE_URL}/blogs/${id}`);
-  } catch (error) {
-    console.error("Error deleting blog:", error);
-    throw error;
-  }
+export const updateBlog = (id, data) => api.put(`/blogs/${id}`, data);
+
+export const deleteBlog = (id) => api.delete(`/blogs/${id}`);
+
+export const uploadImage = (file) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  return api.post("/blogs/upload-image", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };
