@@ -1,26 +1,26 @@
 import React, { useEffect, useState } from 'react';
-import { fetchBlogs } from '../api';
+import { getBlogs } from '../api';
 import BlogCard from '../components/BlogCard';
 import { Grid, Container } from '@mui/material';
 
-function Home() {
+const Home = () => {
   const [blogs, setBlogs] = useState([]);
 
   useEffect(() => {
-    const loadBlogs = async () => {
+    const fetchBlogs = async () => {
       try {
-        const data = await fetchBlogs();
+        const data = await getBlogs();
         setBlogs(data);
       } catch (error) {
-        console.error('Error loading blogs:', error);
+        console.error('Error fetching blogs:', error);
       }
     };
-    loadBlogs();
+    fetchBlogs();
   }, []);
 
   return (
     <Container>
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {blogs.map((blog) => (
           <Grid item xs={12} sm={6} md={4} key={blog.id}>
             <BlogCard blog={blog} />
@@ -29,6 +29,6 @@ function Home() {
       </Grid>
     </Container>
   );
-}
+};
 
 export default Home;
