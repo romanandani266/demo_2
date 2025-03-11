@@ -1,24 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { createBlog, updateBlog, fetchBlogById } from '../api';
+import { createBlog, updateBlog, getBlogById } from '../api';
 import { TextField, Button, Container } from '@mui/material';
 
-function CreateEditBlog() {
+const CreateEditBlog = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ title: '', content: '', image_url: '' });
 
   useEffect(() => {
     if (id) {
-      const loadBlog = async () => {
+      const fetchBlog = async () => {
         try {
-          const blog = await fetchBlogById(id);
+          const blog = await getBlogById(id);
           setFormData(blog);
         } catch (error) {
-          console.error('Error loading blog:', error);
+          console.error('Error fetching blog:', error);
         }
       };
-      loadBlog();
+      fetchBlog();
     }
   }, [id]);
 
@@ -69,6 +69,6 @@ function CreateEditBlog() {
       </form>
     </Container>
   );
-}
+};
 
 export default CreateEditBlog;
