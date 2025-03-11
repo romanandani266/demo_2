@@ -1,12 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { Container, Typography, CircularProgress } from "@mui/material";
-import { getBlogById } from "../api";
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { getBlogById } from '../api';
+import { Container, Typography } from '@mui/material';
 
 const BlogDetailPage = () => {
   const { id } = useParams();
   const [blog, setBlog] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchBlog = async () => {
@@ -14,32 +13,25 @@ const BlogDetailPage = () => {
         const data = await getBlogById(id);
         setBlog(data);
       } catch (error) {
-        console.error("Error fetching blog:", error);
-      } finally {
-        setLoading(false);
+        console.error('Error fetching blog:', error);
       }
     };
-
     fetchBlog();
   }, [id]);
 
-  if (loading) {
-    return <CircularProgress />;
-  }
-
-  if (!blog) {
-    return <Typography variant="h6">Blog not found</Typography>;
-  }
+  if (!blog) return <Typography>Loading...</Typography>;
 
   return (
     <Container>
-      <Typography variant="h3" gutterBottom>
+      <Typography variant="h3" style={{ color: '#1976d2', textShadow: '1px 1px 2px gray' }}>
         {blog.title}
       </Typography>
-      <img src={blog.image_url} alt={blog.title} style={{ width: "100%", marginBottom: "20px" }} />
-      <Typography variant="body1">{blog.content}</Typography>
-      <Typography variant="caption" display="block" gutterBottom>
+      <Typography variant="body2" color="textSecondary">
         Created at: {new Date(blog.created_at).toLocaleString()}
+      </Typography>
+      <img src={blog.image_url} alt={blog.title} style={{ width: '100%', marginTop: '20px' }} />
+      <Typography variant="body1" style={{ marginTop: '20px' }}>
+        {blog.content}
       </Typography>
     </Container>
   );
