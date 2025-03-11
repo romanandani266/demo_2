@@ -92,3 +92,7 @@ def login(user: UserLogin):
     if user.username in users and users[user.username] == user.password:
         return {"message": "Login successful"}
     raise HTTPException(status_code=401, detail="Invalid username or password")
+
+@app.post("/logout")
+def logout():
+    return {"message": "Logout successful"}
