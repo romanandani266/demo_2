@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { TextField, Button, Container } from "@mui/material";
 import { createBlog, updateBlog, getBlogById } from "../api";
+import { TextField, Button, Container } from "@mui/material";
 
 const CreateEditPage = () => {
   const { id } = useParams();
@@ -18,15 +18,9 @@ const CreateEditPage = () => {
           console.error("Error fetching blog:", error);
         }
       };
-
       fetchBlog();
     }
   }, [id]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +32,7 @@ const CreateEditPage = () => {
       }
       navigate("/");
     } catch (error) {
-      console.error("Error saving blog:", error);
+      console.error("Error submitting form:", error);
     }
   };
 
@@ -47,29 +41,26 @@ const CreateEditPage = () => {
       <form onSubmit={handleSubmit}>
         <TextField
           label="Title"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
           fullWidth
           margin="normal"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         />
         <TextField
           label="Content"
-          name="content"
-          value={formData.content}
-          onChange={handleChange}
           fullWidth
           margin="normal"
           multiline
           rows={4}
+          value={formData.content}
+          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
         />
         <TextField
           label="Image URL"
-          name="image_url"
-          value={formData.image_url}
-          onChange={handleChange}
           fullWidth
           margin="normal"
+          value={formData.image_url}
+          onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
         />
         <Button type="submit" variant="contained" color="primary">
           {id ? "Update Blog" : "Create Blog"}
