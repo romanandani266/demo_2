@@ -1,98 +1,145 @@
-from fastapi import FastAPI, HTTPException, Path, Body
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, HttpUrl, Field
+from pydantic import BaseModel
 from typing import List, Optional
-from datetime import datetime
 
 app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "https://yourfrontend.com"
+    "https://yourfrontend.com",
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"]
+    allow_headers=["*"],
 )
 
-class BlogBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    content: str = Field(..., min_length=1)
-    image_url: HttpUrl
+class User(BaseModel):
+    username: str
+    password: str
+    role: str
 
-class BlogCreate(BlogBase):
-    pass
-
-class BlogUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    content: Optional[str] = Field(None, min_length=1)
-    image_url: Optional[HttpUrl]
-
-class Blog(BlogBase):
+class Product(BaseModel):
     id: int
-    created_at: datetime
+    name: str
+    description: Optional[str]
+    price: float
 
-class UserLogin(BaseModel):
-    username: str = Field(..., min_length=1, max_length=50)
-    password: str = Field(..., min_length=1, max_length=50)
+class Location(BaseModel):
+    id: int
+    name: str
+    address: Optional[str]
 
-blogs = []
-blog_id_counter = 1
-users = {"admin": "password123"}
+class Inventory(BaseModel):
+    product_id: int
+    location_id: int
+    stock_level: int
 
-@app.get("/blogs", response_model=List[Blog])
-def get_all_blogs():
-    return blogs
+class Sale(BaseModel):
+    product_id: int
+    location_id: int
+    quantity: int
+    timestamp: str
 
-@app.get("/blogs/{blog_id}", response_model=Blog)
-def get_blog(blog_id: int = Path(...)):
-    for blog in blogs:
-        if blog["id"] == blog_id:
-            return blog
-    raise HTTPException(status_code=404, detail="Blog post not found")
+class RestockingAlert(BaseModel):
+    product_id: int
+    location_id: int
+    stock_level: int
+    threshold: int
 
-@app.post("/blogs", response_model=Blog, status_code=201)
-def create_blog(blog: BlogCreate):
-    global blog_id_counter
-    new_blog = {
-        "id": blog_id_counter,
-        "title": blog.title,
-        "content": blog.content,
-        "image_url": blog.image_url,
-        "created_at": datetime.utcnow(),
-    }
-    blogs.append(new_blog)
-    blog_id_counter += 1
-    return new_blog
+users = [
+    {"username": "admin", "password": "admin123", "role": "admin"},
+    {"username": "manager1", "password": "manager123", "role": "store_manager"},
+]
 
-@app.put("/blogs/{blog_id}", response_model=Blog)
-def update_blog(blog_id: int, blog_update: BlogUpdate):
-    for blog in blogs:
-        if blog["id"] == blog_id:
-            if blog_update.title is not None:
-                blog["title"] = blog_update.title
-            if blog_update.content is not None:
-                blog["content"] = blog_update.content
-            if blog_update.image_url is not None:
-                blog["image_url"] = blog_update.image_url
-            return blog
-    raise HTTPException(status_code=404, detail="Blog post not found")
+products = [
+    {"id": 1, "name": "Product A", "description": "Description A", "price": 10.0},
+    {"id": 2, "name": "Product B", "description": "Description B", "price": 20.0},
+]
 
-@app.delete("/blogs/{blog_id}", status_code=204)
-def delete_blog(blog_id: int):
-    global blogs
-    blogs = [blog for blog in blogs if blog["id"] != blog_id]
-    return {"message": "Blog post deleted successfully"}
+locations = [
+    {"id": 1, "name": "Warehouse 1", "address": "123 Main St"},
+    {"id": 2, "name": "Store 1", "address": "456 Elm St"},
+]
 
-@app.post("/login")
-def login(user: UserLogin):
-    if user.username in users and users[user.username] == user.password:
-        return {"message": "Login successful"}
-    raise HTTPException(status_code=401, detail="Invalid username or password")
+inventory = [
+    {"product_id": 1, "location_id": 1, "stock_level": 100},
+    {"product_id": 2, "location_id": 2, "stock_level": 50},
+]
 
-@app.post("/logout")
-def logout():
-    return {"message": "Logout successful"}
+sales = [
+    {"product_id": 1, "location_id": 1, "quantity": 10, "timestamp": "2023-10-01T10:00:00"},
+    {"product_id": 2, "location_id": 2, "quantity": 5, "timestamp": "2023-10-01T11:00:00"},
+]
+
+alerts = [
+    {"product_id": 1, "location_id": 1, "stock_level": 10, "threshold": 20},
+]
+
+def authenticate_user(username: str, password: str):
+    user = next((u for u in users if u["username"] == username and u["password"] == password), None)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    return user
+
+@app.post("/api/auth/login")
+def login(data: User):
+    user = authenticate_user(data.username, data.password)
+    return {"message": f"Welcome {user['username']}!", "role": user["role"]}
+
+@app.get("/api/inventory", response_model=List[Inventory])
+def get_inventory():
+    return inventory
+
+@app.put("/api/inventory")
+def update_inventory(product_id: int, location_id: int, stock_level: int):
+    item = next((i for i in inventory if i["product_id"] == product_id and i["location_id"] == location_id), None)
+    if not item:
+        raise HTTPException(status_code=404, detail="Inventory item not found")
+    item["stock_level"] = stock_level
+    return {"message": "Inventory updated successfully", "inventory": item}
+
+@app.get("/api/alerts", response_model=List[RestockingAlert])
+def get_alerts():
+    return alerts
+
+@app.get("/api/sales-trends", response_model=List[Sale])
+def get_sales_trends():
+    return sales
+
+@app.post("/api/users")
+def create_user(user: User):
+    if any(u["username"] == user.username for u in users):
+        raise HTTPException(status_code=400, detail="User already exists")
+    users.append(user.dict())
+    return {"message": "User created successfully", "user": user}
+
+@app.get("/api/products", response_model=List[Product])
+def get_products():
+    return products
+
+@app.post("/api/products")
+def create_product(product: Product):
+    if any(p["id"] == product.id for p in products):
+        raise HTTPException(status_code=400, detail="Product with this ID already exists")
+    products.append(product.dict())
+    return {"message": "Product created successfully", "product": product}
+
+@app.get("/api/locations", response_model=List[Location])
+def get_locations():
+    return locations
+
+@app.post("/api/locations")
+def create_location(location: Location):
+    if any(l["id"] == location.id for l in locations):
+        raise HTTPException(status_code=400, detail="Location with this ID already exists")
+    locations.append(location.dict())
+    return {"message": "Location created successfully", "location": location}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
