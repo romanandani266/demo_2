@@ -1,23 +1,34 @@
-import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Home from './pages/Home';
-import CreateEditBlog from './pages/CreateEditBlog';
-import BlogDetailPage from './pages/BlogDetailPage';
-import Navbar from './components/Navbar';
-import { ThemeProvider } from '@mui/material/styles';
-import theme from './theme';
+import React from "react";
+import { Routes, Route, Link } from "react-router-dom";
+import { AppBar, Toolbar, Typography, Button } from "@mui/material";
+import HomePage from "./pages/HomePage";
+import CreateEditPage from "./pages/CreateEditPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
 
 const App = () => {
   return (
-    <ThemeProvider theme={theme}>
-      <Navbar />
+    <div>
+      <AppBar position="static">
+        <Toolbar>
+          <Typography variant="h6" style={{ flexGrow: 1 }}>
+            My Blog App
+          </Typography>
+          <Button color="inherit" component={Link} to="/">
+            Home
+          </Button>
+          <Button color="inherit" component={Link} to="/create">
+            Create Blog
+          </Button>
+        </Toolbar>
+      </AppBar>
+
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/create" element={<CreateEditBlog />} />
-        <Route path="/edit/:id" element={<CreateEditBlog />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/create" element={<CreateEditPage />} />
+        <Route path="/edit/:id" element={<CreateEditPage />} />
         <Route path="/blogs/:id" element={<BlogDetailPage />} />
       </Routes>
-    </ThemeProvider>
+    </div>
   );
 };
 
